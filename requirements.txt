@@ -1,0 +1,16 @@
+# ZDTrans 项目依赖
+
+# GUI框架
+PySide6>=6.6.0
+
+# 全局快捷键和键盘事件
+pynput>=1.7.6
+
+# 剪贴板操作
+pyperclip>=1.8.2
+
+# HTTP请求（API调用）
+requests>=2.31.0
+
+# 环境变量管理（可选）
+python-dotenv>=1.0.0
