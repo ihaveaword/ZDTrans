@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                                QFormLayout, QMessageBox, QCheckBox, QTextEdit)
 from PySide6.QtCore import Qt, Signal
 import json
-from src.hotkey_editor import HotkeyEditor
 
 
 class SettingsDialog(QDialog):
@@ -92,13 +91,17 @@ class SettingsDialog(QDialog):
         hotkey_group = QGroupBox("快捷键配置")
         hotkey_layout = QFormLayout()
         
-        self.translate_hotkey_editor = HotkeyEditor()
-        hotkey_layout.addRow("翻译快捷键:", self.translate_hotkey_editor)
+        self.translate_hotkey_edit = QLineEdit()
+        self.translate_hotkey_edit.setPlaceholderText("例如: Ctrl+Q")
+        self.translate_hotkey_edit.setReadOnly(True)
+        hotkey_layout.addRow("翻译快捷键:", self.translate_hotkey_edit)
         
-        self.polish_hotkey_editor = HotkeyEditor()
-        hotkey_layout.addRow("润色快捷键:", self.polish_hotkey_editor)
+        self.polish_hotkey_edit = QLineEdit()
+        self.polish_hotkey_edit.setPlaceholderText("例如: Ctrl+Shift+Q")
+        self.polish_hotkey_edit.setReadOnly(True)
+        hotkey_layout.addRow("润色快捷键:", self.polish_hotkey_edit)
         
-        hotkey_note = QLabel("💡 提示: 点击'录制'按钮，然后按下想要的快捷键组合")
+        hotkey_note = QLabel("💡 提示: 快捷键可在 config.json 中修改")
         hotkey_note.setStyleSheet("color: #666; font-size: 10px;")
         hotkey_layout.addRow("", hotkey_note)
         
@@ -161,8 +164,8 @@ class SettingsDialog(QDialog):
         
         # 快捷键配置
         hotkey_config = self.current_config.get('hotkey', {})
-        self.translate_hotkey_editor.set_hotkey(hotkey_config.get('translate', 'Ctrl+Q'))
-        self.polish_hotkey_editor.set_hotkey(hotkey_config.get('polish', 'Ctrl+Shift+Q'))
+        self.translate_hotkey_edit.setText(hotkey_config.get('translate', 'Ctrl+Q'))
+        self.polish_hotkey_edit.setText(hotkey_config.get('polish', 'Ctrl+Shift+Q'))
         
     def _on_provider_changed(self, provider_text):
         """当提供商改变时更新默认值"""
@@ -238,8 +241,8 @@ class SettingsDialog(QDialog):
                 'academic_mode': self.academic_mode_check.isChecked()
             },
             'hotkey': {
-                'translate': self.translate_hotkey_editor.get_hotkey() or 'Ctrl+Q',
-                'polish': self.polish_hotkey_editor.get_hotkey() or 'Ctrl+Shift+Q'
+                'translate': self.translate_hotkey_edit.text() or 'Ctrl+Q',
+                'polish': self.polish_hotkey_edit.text() or 'Ctrl+Shift+Q'
             },
             'ui': self.current_config.get('ui', {}),
             'general': self.current_config.get('general', {})
