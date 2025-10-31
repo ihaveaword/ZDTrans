@@ -1,0 +1,29 @@
+{
+  "api": {
+    "provider": "volcengine",
+    "api_key": "",
+    "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+    "model": "doubao-pro-32k"
+  },
+  "translation": {
+    "domain": "computer_science",
+    "custom_context": "",
+    "keywords": "深度学习, 神经网络, 机器学习",
+    "preserve_terms": true,
+    "academic_mode": true
+  },
+  "hotkey": {
+    "translate": "ctrl+q",
+    "polish": "ctrl+shift+q"
+  },
+  "ui": {
+    "theme": "light",
+    "opacity": 0.95,
+    "font_size": 12
+  },
+  "general": {
+    "auto_start": false,
+    "cache_enabled": true,
+    "language": "zh-CN"
+  }
+}

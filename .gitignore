@@ -53,3 +53,8 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+
+# Release files
+release/*.app
+release/*.zip
+release/*.dmg
