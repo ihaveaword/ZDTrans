@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QStatusBar, QFrame)
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QIcon
+from .theme import theme_manager
 
 
 class MainWindow(QMainWindow):
@@ -20,6 +21,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.translation_count = 0
         self.init_ui()
+        
+        # 连接主题变化信号
+        theme_manager.theme_changed.connect(self.apply_theme)
         
     def init_ui(self):
         """初始化UI"""
@@ -61,7 +65,8 @@ class MainWindow(QMainWindow):
         subtitle_font = QFont("PingFang SC", 12)
         subtitle.setFont(subtitle_font)
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("color: #666; margin-bottom: 10px;")
+        subtitle.setStyleSheet("margin-bottom: 10px;")
+        self.subtitle_label = subtitle
         layout.addWidget(subtitle)
         
         # 状态信息组
@@ -73,13 +78,11 @@ class MainWindow(QMainWindow):
         self.status_label = QLabel("程序运行中")
         status_font = QFont("PingFang SC", 12)
         self.status_label.setFont(status_font)
-        self.status_label.setStyleSheet("color: #0078d4;")
         status_layout.addWidget(self.status_label)
         
         self.count_label = QLabel(f"已翻译: {self.translation_count} 次")
         count_font = QFont("PingFang SC", 11)
         self.count_label.setFont(count_font)
-        self.count_label.setStyleSheet("color: #666;")
         status_layout.addWidget(self.count_label)
         
         status_group.setLayout(status_layout)
@@ -104,8 +107,8 @@ class MainWindow(QMainWindow):
         tip = QLabel("选中文字后按快捷键翻译\n无选中时按 Ctrl+Q 显示此窗口")
         tip_font = QFont("PingFang SC", 10)
         tip.setFont(tip_font)
-        tip.setStyleSheet("color: #888;")
         tip.setWordWrap(True)
+        self.hotkey_tip_label = tip
         hotkey_layout.addWidget(tip)
         
         # 保存引用用于更新
@@ -135,20 +138,20 @@ class MainWindow(QMainWindow):
         button_layout = QHBoxLayout()
         button_layout.setSpacing(10)
         
+        # 主题切换按钮
+        theme_btn = QPushButton("🌙")
+        theme_btn.setFixedSize(40, 40)
+        theme_font = QFont("PingFang SC", 16)
+        theme_btn.setFont(theme_font)
+        theme_btn.setToolTip("切换日间/夜间模式")
+        theme_btn.clicked.connect(self.toggle_theme)
+        button_layout.addWidget(theme_btn)
+        self.theme_button = theme_btn
+        
         settings_btn = QPushButton("设置")
         settings_btn.setFixedHeight(40)
         settings_font = QFont("PingFang SC", 13, QFont.Bold)
         settings_btn.setFont(settings_font)
-        settings_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #0078d4;
-                color: white;
-                border: none;
-                border-radius: 5px;
-            }
-            QPushButton:hover { background-color: #106ebe; }
-            QPushButton:pressed { background-color: #005a9e; }
-        """)
         settings_btn.clicked.connect(self.on_settings_clicked)
         button_layout.addWidget(settings_btn)
         
@@ -156,16 +159,6 @@ class MainWindow(QMainWindow):
         minimize_btn.setFixedHeight(40)
         minimize_font = QFont("PingFang SC", 13)
         minimize_btn.setFont(minimize_font)
-        minimize_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #5c5c5c;
-                color: white;
-                border: none;
-                border-radius: 5px;
-            }
-            QPushButton:hover { background-color: #6c6c6c; }
-            QPushButton:pressed { background-color: #4c4c4c; }
-        """)
         minimize_btn.clicked.connect(self.hide)
         button_layout.addWidget(minimize_btn)
         
@@ -179,7 +172,8 @@ class MainWindow(QMainWindow):
         tip_label.setAlignment(Qt.AlignCenter)
         tip_font = QFont("PingFang SC", 10)
         tip_label.setFont(tip_font)
-        tip_label.setStyleSheet("color: #888; margin-top: 10px;")
+        tip_label.setStyleSheet("margin-top: 10px;")
+        self.tip_label = tip_label
         layout.addWidget(tip_label)
         
         # 弹性空间
@@ -190,27 +184,39 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.statusBar)
         self.statusBar.showMessage("就绪")
         
-        # 窗口样式
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #f5f5f5;
-            }
-            QGroupBox {
-                font-family: 'PingFang SC';
-                font-size: 13px;
-                font-weight: bold;
-                border: 2px solid #ddd;
-                border-radius: 6px;
-                margin-top: 10px;
-                padding: 15px 10px 10px 10px;
-                background-color: white;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """)
+        # 应用初始主题
+        self.apply_theme(theme_manager.get_theme())
+        
+    def toggle_theme(self):
+        """切换主题"""
+        new_theme = theme_manager.toggle_theme()
+        
+    def apply_theme(self, theme):
+        """应用主题"""
+        # 更新窗口样式
+        self.setStyleSheet(theme_manager.get_main_window_style(theme))
+        
+        # 更新主题按钮图标
+        self.theme_button.setText("☀️" if theme == 'dark' else "🌙")
+        
+        # 更新标签颜色
+        subtitle_color = theme_manager.get_label_color(theme, 'subtitle')
+        self.subtitle_label.setStyleSheet(f"color: {subtitle_color}; margin-bottom: 10px;")
+        
+        status_color = theme_manager.get_label_color(theme, 'status')
+        self.status_label.setStyleSheet(f"color: {status_color};")
+        
+        count_color = theme_manager.get_label_color(theme, 'count')
+        self.count_label.setStyleSheet(f"color: {count_color};")
+        
+        tip_color = theme_manager.get_label_color(theme, 'tip')
+        self.hotkey_tip_label.setStyleSheet(f"color: {tip_color};")
+        self.tip_label.setStyleSheet(f"color: {tip_color}; margin-top: 10px;")
+        
+        # 更新按钮样式
+        self.settings_button.setStyleSheet(theme_manager.get_button_style(theme, 'primary'))
+        self.minimize_button.setStyleSheet(theme_manager.get_button_style(theme, 'secondary'))
+        self.theme_button.setStyleSheet(theme_manager.get_button_style(theme, 'secondary'))
         
     def on_settings_clicked(self):
         """设置按钮点击"""

@@ -4,9 +4,11 @@
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                                QLineEdit, QPushButton, QComboBox, QGroupBox,
-                               QFormLayout, QMessageBox, QCheckBox, QTextEdit)
+                               QFormLayout, QMessageBox, QCheckBox, QTextEdit,
+                               QScrollArea, QWidget)
 from PySide6.QtCore import Qt, Signal
 import json
+from .theme import theme_manager
 
 
 class SettingsDialog(QDialog):
@@ -21,13 +23,32 @@ class SettingsDialog(QDialog):
         self.init_ui()
         self.load_config()
         
+        # 连接主题变化信号
+        theme_manager.theme_changed.connect(self.apply_theme)
+        # 应用初始主题
+        self.apply_theme(theme_manager.get_theme())
+        
     def init_ui(self):
         """初始化UI"""
         self.setWindowTitle("ZDTrans - 设置")
         self.setModal(True)
         self.setMinimumWidth(500)
+        self.setMinimumHeight(600)
+        self.setMaximumHeight(800)
         
-        layout = QVBoxLayout()
+        # 主布局
+        main_layout = QVBoxLayout()
+        
+        # 创建滚动区域
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
+        # 创建内容容器
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
+        layout.setContentsMargins(10, 10, 10, 10)
         
         # API设置组
         api_group = QGroupBox("API 配置")
@@ -58,12 +79,26 @@ class SettingsDialog(QDialog):
         trans_group = QGroupBox("翻译配置")
         trans_layout = QFormLayout()
         
+        # 学科领域选择
+        domain_layout = QHBoxLayout()
         self.domain_combo = QComboBox()
+        self.domain_combo.setEditable(True)  # 允许编辑
         self.domain_combo.addItems([
             "通用", "计算机科学", "医学", "生物学", 
             "物理学", "化学", "数学", "工程学", "经济学"
         ])
-        trans_layout.addRow("学科领域:", self.domain_combo)
+        self.domain_combo.setToolTip("可直接输入自定义学科领域")
+        domain_layout.addWidget(self.domain_combo)
+        
+        # 添加"+"按钮用于保存自定义领域
+        add_domain_btn = QPushButton("+")
+        add_domain_btn.setFixedSize(30, 30)
+        add_domain_btn.setToolTip("将自定义领域添加到列表")
+        add_domain_btn.clicked.connect(self._add_custom_domain)
+        domain_layout.addWidget(add_domain_btn)
+        self.add_domain_button = add_domain_btn
+        
+        trans_layout.addRow("学科领域:", domain_layout)
         
         self.custom_context_edit = QTextEdit()
         self.custom_context_edit.setPlaceholderText("例如：这是深度学习方向的论文，重点关注神经网络架构")
@@ -108,7 +143,25 @@ class SettingsDialog(QDialog):
         hotkey_group.setLayout(hotkey_layout)
         layout.addWidget(hotkey_group)
         
-        # 按钮布局
+        # UI设置组
+        ui_group = QGroupBox("界面配置")
+        ui_layout = QFormLayout()
+        
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["日间模式", "夜间模式"])
+        self.theme_combo.currentTextChanged.connect(self._on_theme_changed)
+        ui_layout.addRow("主题:", self.theme_combo)
+        
+        ui_group.setLayout(ui_layout)
+        layout.addWidget(ui_group)
+        
+        # 将内容容器设置到滚动区域
+        scroll.setWidget(content_widget)
+        
+        # 将滚动区域添加到主布局
+        main_layout.addWidget(scroll)
+        
+        # 按钮布局（固定在底部，不滚动）
         button_layout = QHBoxLayout()
         
         self.save_button = QPushButton("保存")
@@ -119,9 +172,9 @@ class SettingsDialog(QDialog):
         self.cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(self.cancel_button)
         
-        layout.addLayout(button_layout)
+        main_layout.addLayout(button_layout)
         
-        self.setLayout(layout)
+        self.setLayout(main_layout)
         
     def load_config(self):
         """加载配置"""
@@ -145,6 +198,8 @@ class SettingsDialog(QDialog):
         # 翻译配置
         trans_config = self.current_config.get('translation', {})
         domain = trans_config.get('domain', 'general')
+        
+        # 标准学科领域映射
         domain_map = {
             'general': '通用',
             'computer_science': '计算机科学',
@@ -156,7 +211,21 @@ class SettingsDialog(QDialog):
             'engineering': '工程学',
             'economics': '经济学'
         }
-        self.domain_combo.setCurrentText(domain_map.get(domain, '通用'))
+        
+        # 加载自定义学科领域列表
+        custom_domains = trans_config.get('custom_domains', [])
+        for custom_domain in custom_domains:
+            # 只添加不在默认列表中的领域
+            if custom_domain not in domain_map.values():
+                self.domain_combo.addItem(custom_domain)
+        
+        # 设置当前学科领域（支持自定义领域）
+        if domain in domain_map:
+            self.domain_combo.setCurrentText(domain_map[domain])
+        else:
+            # 直接使用域值（可能是自定义的）
+            self.domain_combo.setCurrentText(domain)
+        
         self.custom_context_edit.setPlainText(trans_config.get('custom_context', ''))
         self.keywords_edit.setText(trans_config.get('keywords', ''))
         self.academic_mode_check.setChecked(trans_config.get('academic_mode', False))
@@ -167,6 +236,38 @@ class SettingsDialog(QDialog):
         self.translate_hotkey_edit.setText(hotkey_config.get('translate', 'Ctrl+Q'))
         self.polish_hotkey_edit.setText(hotkey_config.get('polish', 'Ctrl+Shift+Q'))
         
+        # UI配置
+        ui_config = self.current_config.get('ui', {})
+        theme = ui_config.get('theme', 'light')
+        self.theme_combo.setCurrentText("夜间模式" if theme == 'dark' else "日间模式")
+        
+    def _add_custom_domain(self):
+        """添加自定义学科领域到下拉列表"""
+        current_text = self.domain_combo.currentText().strip()
+        if not current_text:
+            QMessageBox.warning(self, "提示", "请输入学科领域名称")
+            return
+        
+        # 检查是否已存在
+        for i in range(self.domain_combo.count()):
+            if self.domain_combo.itemText(i) == current_text:
+                QMessageBox.information(self, "提示", "该领域已存在于列表中")
+                return
+        
+        # 添加到下拉列表
+        self.domain_combo.addItem(current_text)
+        self.domain_combo.setCurrentText(current_text)
+        QMessageBox.information(self, "成功", f"已添加自定义领域：{current_text}")
+    
+    def _on_theme_changed(self, theme_text):
+        """主题改变时立即应用"""
+        theme = 'dark' if theme_text == "夜间模式" else 'light'
+        theme_manager.set_theme(theme)
+    
+    def apply_theme(self, theme):
+        """应用主题"""
+        self.setStyleSheet(theme_manager.get_settings_style(theme))
+    
     def _on_provider_changed(self, provider_text):
         """当提供商改变时更新默认值"""
         if provider_text == "OpenAI":
@@ -210,8 +311,8 @@ class SettingsDialog(QDialog):
         if not model:
             model = self.model_edit.placeholderText()
         
-        # 转换领域名称
-        domain_text = self.domain_combo.currentText()
+        # 转换领域名称（支持自定义）
+        domain_text = self.domain_combo.currentText().strip()
         domain_map_reverse = {
             '通用': 'general',
             '计算机科学': 'computer_science',
@@ -223,7 +324,20 @@ class SettingsDialog(QDialog):
             '工程学': 'engineering',
             '经济学': 'economics'
         }
-        domain = domain_map_reverse.get(domain_text, 'general')
+        
+        # 如果是标准领域，使用映射的key；否则直接使用输入的文本
+        if domain_text in domain_map_reverse:
+            domain = domain_map_reverse[domain_text]
+        else:
+            # 自定义领域，直接使用文本
+            domain = domain_text
+        
+        # 收集所有自定义领域（不在标准列表中的）
+        custom_domains = []
+        for i in range(self.domain_combo.count()):
+            item_text = self.domain_combo.itemText(i)
+            if item_text not in domain_map_reverse:
+                custom_domains.append(item_text)
             
         # 构建新配置
         new_config = {
@@ -235,6 +349,7 @@ class SettingsDialog(QDialog):
             },
             'translation': {
                 'domain': domain,
+                'custom_domains': custom_domains,  # 保存自定义领域列表
                 'custom_context': self.custom_context_edit.toPlainText().strip(),
                 'keywords': self.keywords_edit.text().strip(),
                 'preserve_terms': self.preserve_terms_check.isChecked(),
@@ -244,7 +359,9 @@ class SettingsDialog(QDialog):
                 'translate': self.translate_hotkey_edit.text() or 'Ctrl+Q',
                 'polish': self.polish_hotkey_edit.text() or 'Ctrl+Shift+Q'
             },
-            'ui': self.current_config.get('ui', {}),
+            'ui': {
+                'theme': 'dark' if self.theme_combo.currentText() == "夜间模式" else 'light'
+            },
             'general': self.current_config.get('general', {})
         }
         

@@ -16,6 +16,7 @@ from src.clipboard import ClipboardManager
 from src.utils import load_config, save_config, setup_logging, check_first_run
 from src.permissions import request_accessibility_permission
 from src.main_window import MainWindow
+from src.theme import theme_manager
 
 
 class ZDTransApp:
@@ -36,6 +37,11 @@ class ZDTransApp:
         
         # 加载配置
         self.config = load_config()
+        
+        # 加载并应用主题
+        ui_config = self.config.get('ui', {})
+        theme = ui_config.get('theme', 'light')
+        theme_manager.set_theme(theme)
         
         # 检查是否首次运行
         if check_first_run():

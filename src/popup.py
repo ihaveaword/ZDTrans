@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButt
 from PySide6.QtCore import Qt, QTimer, QPoint
 from PySide6.QtGui import QCursor, QFont
 import pyperclip
+from .theme import theme_manager
 
 
 class PopupWindow(QWidget):
@@ -15,6 +16,9 @@ class PopupWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.init_ui()
+        
+        # 连接主题变化信号
+        theme_manager.theme_changed.connect(self.apply_theme)
         
     def init_ui(self):
         """初始化UI"""
@@ -27,36 +31,9 @@ class PopupWindow(QWidget):
         
         # 设置半透明背景
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setStyleSheet("""
-            QWidget {
-                background-color: rgba(40, 40, 40, 240);
-                border-radius: 10px;
-                color: white;
-            }
-            QTextEdit {
-                background-color: rgba(60, 60, 60, 200);
-                border: none;
-                border-radius: 5px;
-                padding: 10px;
-                color: white;
-                font-size: 14px;
-            }
-            QPushButton {
-                background-color: rgba(80, 80, 80, 200);
-                border: none;
-                border-radius: 5px;
-                padding: 8px 16px;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: rgba(100, 100, 100, 200);
-            }
-            QLabel {
-                color: rgba(255, 255, 255, 180);
-                font-size: 12px;
-            }
-        """)
+        
+        # 应用初始主题
+        self.apply_theme(theme_manager.get_theme())
         
         # 布局
         layout = QVBoxLayout()
@@ -91,6 +68,10 @@ class PopupWindow(QWidget):
         
         # 设置窗口大小
         self.setFixedSize(450, 300)
+        
+    def apply_theme(self, theme):
+        """应用主题"""
+        self.setStyleSheet(theme_manager.get_popup_style(theme))
         
     def show_loading(self, action_type='translate'):
         """显示加载状态"""
