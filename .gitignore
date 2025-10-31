@@ -38,3 +38,18 @@ data/
 release/*.zip
 release/*.dmg
 release/*.pkg
+
+# Build outputs
+build/
+dist/
+*.spec
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE
+.vscode/
+.idea/
