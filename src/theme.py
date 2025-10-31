@@ -84,11 +84,26 @@ class ThemeManager(QObject):
                     margin-top: 10px;
                     padding: 15px 10px 10px 10px;
                     background-color: white;
+                    color: #000000;
                 }
                 QGroupBox::title {
                     subcontrol-origin: margin;
                     left: 10px;
                     padding: 0 5px;
+                    color: #000000;
+                }
+                QLabel {
+                    color: #000000;
+                }
+                QTextEdit {
+                    background-color: white;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    color: #000000;
+                }
+                QStatusBar {
+                    background-color: white;
+                    color: #000000;
                 }
             """
             
@@ -245,8 +260,12 @@ class ThemeManager(QObject):
             """
         else:
             return """
+                QDialog {
+                    background-color: #ffffff;
+                }
                 QScrollArea {
                     border: none;
+                    background-color: #ffffff;
                 }
                 QScrollBar:vertical {
                     background-color: #f0f0f0;
@@ -263,6 +282,63 @@ class ThemeManager(QObject):
                 }
                 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                     height: 0px;
+                }
+                QGroupBox {
+                    font-weight: bold;
+                    border: 2px solid #ddd;
+                    border-radius: 6px;
+                    margin-top: 10px;
+                    padding: 15px 10px 10px 10px;
+                    background-color: #ffffff;
+                    color: #000000;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    left: 10px;
+                    padding: 0 5px;
+                    color: #000000;
+                }
+                QLabel {
+                    color: #000000;
+                }
+                QLineEdit, QTextEdit {
+                    background-color: #ffffff;
+                    border: 1px solid #cccccc;
+                    border-radius: 4px;
+                    padding: 5px;
+                    color: #000000;
+                }
+                QComboBox {
+                    background-color: #ffffff;
+                    border: 1px solid #cccccc;
+                    border-radius: 4px;
+                    padding: 5px;
+                    color: #000000;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #ffffff;
+                    color: #000000;
+                    selection-background-color: #0078d4;
+                    selection-color: #ffffff;
+                }
+                QCheckBox {
+                    color: #000000;
+                }
+                QPushButton {
+                    background-color: #0078d4;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                }
+                QPushButton:hover {
+                    background-color: #106ebe;
+                }
+                QPushButton:pressed {
+                    background-color: #005a9e;
                 }
             """
             

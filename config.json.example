@@ -7,7 +7,6 @@
   },
   "translation": {
     "domain": "computer_science",
-    "custom_domains": ["量子计算", "区块链技术", "人工智能伦理"],
     "custom_context": "",
     "keywords": "深度学习, 神经网络, 机器学习",
     "preserve_terms": true,
